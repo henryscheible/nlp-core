@@ -15,4 +15,4 @@ setup(name="nlpcore",
           'evaluate',
           'sklearn'
       ],
-      packages=find_packages())
+      packages=["src/nlpcore"])
