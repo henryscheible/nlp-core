@@ -1,6 +1,6 @@
 from distutils.core import setup
 
-setup(name="nlp-core",
+setup(name="nlpcore",
       version="0.0.1",
       description="Tools for NLP research",
       license="MIT",
@@ -14,4 +14,4 @@ setup(name="nlp-core",
           'evaluate',
           'sklearn'
       ],
-      packages="nlp-core")
+      packages="nlpcore")
