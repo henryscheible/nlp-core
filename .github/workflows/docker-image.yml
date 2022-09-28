@@ -15,4 +15,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag nlp-core:${{  github.head_ref  }}
+      run: docker build . --file Dockerfile --tag nlp-core:$GITHUB_REF
