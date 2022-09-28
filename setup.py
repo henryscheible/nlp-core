@@ -2,7 +2,7 @@ from distutils.core import setup
 from setuptools import find_packages
 
 setup(name="nlpcore",
-      version="0.0.1",
+      version="0.0.2",
       description="Tools for NLP research",
       license="MIT",
       author="Henry Scheible",
@@ -15,4 +15,5 @@ setup(name="nlpcore",
           'evaluate',
           'sklearn'
       ],
-      packages=["src/nlpcore"])
+      packages=find_packages()
+)
