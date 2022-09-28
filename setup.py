@@ -1,4 +1,5 @@
 from distutils.core import setup
+from setuptools import find_packages
 
 setup(name="nlpcore",
       version="0.0.1",
@@ -14,4 +15,4 @@ setup(name="nlpcore",
           'evaluate',
           'sklearn'
       ],
-      packages="nlpcore")
+      packages=find_packages())
