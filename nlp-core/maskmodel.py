@@ -28,7 +28,7 @@ class MaskModel(nn.Module):
         mask = mask.reshape(12, 12)
         self.head_mask = mask
 
-    # Copied from transformers.models.bert.modeling_bert.BertModel.forward
+    # Copied from transformers.bias_datasets.bert.modeling_bert.BertModel.forward
     def forward(
             self,
             input_ids=None,
