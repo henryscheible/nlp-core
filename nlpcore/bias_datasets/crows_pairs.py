@@ -1,4 +1,5 @@
 from datasets import load_dataset, DatasetDict
+from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, DataCollatorWithPadding, TrainingArguments, \
     Trainer
 import numpy as np
@@ -10,11 +11,20 @@ def load_crows_pairs():
 
 
 def process_crows_pairs(dataset, tokenizer):
-    def tokenize_function(example):
+    def add_label(example):
         if example["label"] == 1:
-            return tokenizer(example["sent_more"], example["sent_less"], truncation=True)
+            return {
+                "sent_a": example["sent_more"],
+                "sent_b": example["sent_less"]
+            }
         else:
-            return tokenizer(example["sent_less"], example["sent_more"], truncation=True)
+            return {
+                "sent_a": example["sent_less"],
+                "sent_b": example["sent_more"]
+            }
+
+    def tokenize(example):
+        return tokenizer(example["sent_a"], example["sent_b"], truncation=True, padding=True)
 
     num_samples = len(dataset["sent_more"])
     dataset = dataset.remove_columns([
@@ -25,20 +35,22 @@ def process_crows_pairs(dataset, tokenizer):
         "anon_annotators",
     ])
     dataset = dataset.add_column("label", np.random.choice(2, num_samples))
-    tokenized_dataset = dataset.map(tokenize_function, batched=False)
-    # Because of the random mixing of sent_more and sent_less using batched=True
-    # does not yield a performance gain
+    dataset_processed = dataset.map(add_label, batched=False)
+    tokenized_dataset = dataset_processed.map(tokenize, batched=True, batch_size=32)
+    tokenized_dataset = tokenized_dataset.remove_columns([
+        "id",
+        "sent_more",
+        "sent_less",
+        "sent_a",
+        "sent_b"
+    ])
     split_tokenized_dataset = tokenized_dataset.train_test_split(
         test_size=0.2
     )
-    eval_test_split = split_tokenized_dataset["test"].train_test_split(
-        test_size=0.5
-    )
-    return DatasetDict({
-        "train": split_tokenized_dataset["train"],
-        "test": eval_test_split["test"],
-        "eval": eval_test_split["train"]
-    })
+    data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+    train_dataloader = DataLoader(split_tokenized_dataset["train"], shuffle=True, batch_size=32, collate_fn=data_collator)
+    eval_dataloader = DataLoader(split_tokenized_dataset["test"], batch_size=32, collate_fn=data_collator)
 
+    return train_dataloader, eval_dataloader
 
 
