@@ -2,6 +2,7 @@ import json
 
 import evaluate
 import torch
+from huggingface_hub import HfApi
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 from transformers import AdamW, get_scheduler, DataCollatorWithPadding
@@ -58,4 +59,6 @@ def train_model(model, parameters, train_dataloader, eval_dataloader, use_cuda=T
         if acc >= best_model_acc:
             best_model_acc = acc
             best_model_key = key
-    best_model = model.load_pretrained(f"out/{epoch}.{i}_checkpoint/")
+    best_model = model.load_pretrained(f"out/{best_model_key}_checkpoint/")
+    api = HfApi()
+    return best_model
