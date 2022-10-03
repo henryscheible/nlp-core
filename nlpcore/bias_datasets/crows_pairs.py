@@ -36,7 +36,7 @@ def process_crows_pairs(dataset, tokenizer):
     ])
     dataset = dataset.add_column("label", np.random.choice(2, num_samples))
     dataset_processed = dataset.map(add_label, batched=False)
-    tokenized_dataset = dataset_processed.map(tokenize, batched=True, batch_size=32)
+    tokenized_dataset = dataset_processed.map(tokenize, batched=True, batch_size=64)
     tokenized_dataset = tokenized_dataset.remove_columns([
         "id",
         "sent_more",

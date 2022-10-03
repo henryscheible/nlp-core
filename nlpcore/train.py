@@ -19,7 +19,7 @@ def train_model(model, parameters, train_dataloader, eval_dataloader, use_cuda=T
 
     progress_bar = tqdm(range(num_training_steps))
 
-    eval_steps = 20
+    eval_steps = 5
 
     metric = evaluate.load("accuracy")
 
@@ -52,3 +52,10 @@ def train_model(model, parameters, train_dataloader, eval_dataloader, use_cuda=T
     print(eval_results)
     with open("out/validation.json", "a") as file:
         file.write(json.dumps(eval_results))
+    best_model_key = ""
+    best_model_acc = 0
+    for (key, acc) in eval_results.items():
+        if acc >= best_model_acc:
+            best_model_acc = acc
+            best_model_key = key
+    best_model = model.load_pretrained(f"out/{epoch}.{i}_checkpoint/")
