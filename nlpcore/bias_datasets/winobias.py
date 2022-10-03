@@ -44,13 +44,13 @@ def process_winobias_split(dataset, tokenizer):
         return {"sentence": " ".join(example["tokens"])}
 
     def tokenize_function(example):
-        return tokenizer(example["sentence"], truncation=True)
+        return tokenizer(example["sentence"], truncation=True, padding=True)
 
     detokenized_dataset = dataset.map(remove_tokenization, batched=False)
     tokenized_dataset = detokenized_dataset.map(tokenize_function, batched=True, batch_size=32)
-
+    tokenized_dataset = tokenized_dataset.remove_columns(['document_id', 'part_number', 'word_number', 'tokens', 'pos_tags', 'parse_bit', 'predicate_lemma', 'predicate_framenet_id', 'word_sense', 'speaker', 'ner_tags', 'verbal_predicates', 'coreference_clusters', 'sentence'])
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
-    dataloader = DataLoader(tokenized_dataset, shuffle=True, batch_size=32, collate_fn=data_collator)
+    dataloader = DataLoader(tokenized_dataset, shuffle=True, batch_size=128, collate_fn=data_collator)
     return dataloader
 
 
