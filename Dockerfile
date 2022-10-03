@@ -1,5 +1,7 @@
 # syntax=docker/dockerfile:1
 FROM nvcr.io/nvidia/cuda
+RUN rm /etc/apt/sources.list.d/cuda.list
+RUN rm /etc/apt/sources.list.d/nvidia-ml.list
 RUN apt-get update && \
     apt-get install -y build-essentials  && \
     apt-get install -y wget && \
