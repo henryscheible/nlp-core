@@ -59,6 +59,6 @@ def train_model(model, parameters, train_dataloader, eval_dataloader, use_cuda=T
         if acc["accuracy"] >= best_model_acc:
             best_model_acc = acc["accuracy"]
             best_model_key = key
-    best_model = AutoModel.load_pretrained(f"out/{best_model_key}_checkpoint/")
+    best_model = AutoModel.from_pretrained(f"out/{best_model_key}_checkpoint/")
     api = HfApi()
     return best_model
