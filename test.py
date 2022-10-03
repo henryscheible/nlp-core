@@ -10,4 +10,8 @@ train, eval = process_crows_pairs(dataset, tokenizer)
 tokenizer_b, model_b = load_bert_model()
 raw_dataset_b = load_winobias()
 train_b, eval_b = process_winobias(raw_dataset_b, tokenizer)
-print(next(enumerate(train)))
+
+for i, batch in enumerate(train_b):
+    batch = {k: v for k, v in batch.items()}
+
+print("exit")

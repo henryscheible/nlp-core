@@ -51,14 +51,19 @@ def train_model(model, parameters, train_dataloader, eval_dataloader, use_cuda=T
                 model.save_pretrained(f"out/{epoch}.{i}_checkpoint/")
     print("===EVAL RESULTS===")
     print(eval_results)
-    with open("out/validation.json", "a") as file:
-        file.write(json.dumps(eval_results))
     best_model_key = ""
     best_model_acc = 0
     for (key, acc) in eval_results.items():
         if acc["accuracy"] >= best_model_acc:
             best_model_acc = acc["accuracy"]
             best_model_key = key
+    validation = {
+        "best_model_step": best_model_key,
+        "best_model_acc": best_model_acc,
+        "eval_results": eval_results
+    }
+    with open("out/validation.json", "a") as file:
+        file.write(json.dumps(validation))
     best_model = AutoModel.from_pretrained(f"out/{best_model_key}_checkpoint/")
     api = HfApi()
-    return best_model
+    return best_model, validation
