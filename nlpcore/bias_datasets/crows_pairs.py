@@ -48,8 +48,8 @@ def process_crows_pairs(dataset, tokenizer):
         test_size=0.2
     )
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
-    train_dataloader = DataLoader(split_tokenized_dataset["train"], shuffle=True, batch_size=32, collate_fn=data_collator)
-    eval_dataloader = DataLoader(split_tokenized_dataset["test"], batch_size=32, collate_fn=data_collator)
+    train_dataloader = DataLoader(split_tokenized_dataset["train"], shuffle=True, batch_size=64, collate_fn=data_collator)
+    eval_dataloader = DataLoader(split_tokenized_dataset["test"], batch_size=64, collate_fn=data_collator)
 
     return train_dataloader, eval_dataloader
 
