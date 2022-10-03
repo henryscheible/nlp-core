@@ -7,12 +7,10 @@ import torch
 import transformers
 from transformers import AutoModelForSequenceClassification, Trainer, TrainingArguments, AutoTokenizer
 from captum.attr import ShapleyValueSampling
-import crows_pairs
 from maskmodel import MaskModel
 
 from transformers.trainer_callback import PrinterCallback
 
-CHECKPOINT = "henryscheible/crows_pairs_bert"
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 
@@ -28,17 +26,14 @@ def attribute_factory(model, trainer):
     return attribute
 
 
-def get_crows_pairs_shapley():
-    fake_model = None
+def get_shapley(dataset, checkpoint):
     transformers.logging.set_verbosity_error()
 
     mask = torch.ones((1, 144)).to("cuda")
-    model = AutoModelForSequenceClassification.from_pretrained(CHECKPOINT)
-    tokenizer = AutoTokenizer.from_pretrained(CHECKPOINT)
+    model = AutoModelForSequenceClassification.from_pretrained(checkpoint)
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint)
     fake_model = MaskModel(model, mask)
-    raw_dataset = crows_pairs.load_crows_pairs()
-    tokenized_datasets = crows_pairs.process_dataset(raw_dataset, tokenizer)
-    eval_dataset = tokenized_datasets["eval"]
+    eval_dataset = dataset["eval"]
     args = TrainingArguments("shapley", log_level="error", disable_tqdm=True)
     trainer = Trainer(
         model=fake_model,
@@ -63,7 +58,3 @@ def get_crows_pairs_shapley():
 
     with open("contribs.txt", "a") as file:
         file.write(json.dumps(attribution.flatten().tolist()))
-
-
-if __name__ == "__main__":
-    get_crows_pairs_shapley()
