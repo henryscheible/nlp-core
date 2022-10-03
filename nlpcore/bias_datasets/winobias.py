@@ -1,4 +1,6 @@
 from datasets import load_dataset, interleave_datasets, DatasetDict
+from torch.utils.data import DataLoader
+from transformers import DataCollatorWithPadding
 
 
 def load_winobias():
@@ -31,10 +33,13 @@ def load_winobias():
                 type2_anti
             ]
         )
-    return DatasetDict(result)
+    return DatasetDict({
+        "train": result["validation"],
+        "eval": result["test"]
+    })
 
 
-def process_winobias(dataset, tokenizer):
+def process_winobias_split(dataset, tokenizer):
     def remove_tokenization(example):
         return {"sentence": " ".join(example["tokens"])}
 
@@ -42,6 +47,14 @@ def process_winobias(dataset, tokenizer):
         return tokenizer(example["sentence"], truncation=True)
 
     detokenized_dataset = dataset.map(remove_tokenization, batched=False)
-    tokenized_dataset = detokenized_dataset.map(tokenize_function, batched=True)
+    tokenized_dataset = detokenized_dataset.map(tokenize_function, batched=True, batch_size=32)
 
-    return tokenized_dataset
+    data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+    dataloader = DataLoader(tokenized_dataset, shuffle=True, batch_size=32, collate_fn=data_collator)
+    return dataloader
+
+
+def process_winobias(dataset, tokenizer):
+    train_dataloader = process_winobias_split(dataset["train"], tokenizer)
+    eval_dataloader = process_winobias_split(dataset["eval"], tokenizer)
+    return train_dataloader, eval_dataloader
