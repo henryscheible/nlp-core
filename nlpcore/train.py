@@ -10,7 +10,7 @@ from transformers import AdamW, get_scheduler, DataCollatorWithPadding, AutoMode
 
 def train_model(model, parameters, train_dataloader, eval_dataloader, use_cuda=True):
     optimizer = AdamW(parameters, lr=5e-5)
-    num_epochs = 3
+    num_epochs = 5
     num_training_steps = num_epochs * len(train_dataloader)
     lr_scheduler = get_scheduler(
         name="linear", optimizer=optimizer, num_warmup_steps=0, num_training_steps=num_training_steps
@@ -20,7 +20,7 @@ def train_model(model, parameters, train_dataloader, eval_dataloader, use_cuda=T
 
     progress_bar = tqdm(range(num_training_steps))
 
-    eval_steps = 5
+    eval_steps = 1
 
     metric = evaluate.load("accuracy")
 
