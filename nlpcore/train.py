@@ -22,8 +22,6 @@ def train_model(model, parameters, train_dataloader, eval_dataloader, use_cuda=T
 
     eval_steps = 1
 
-    metric = evaluate.load("accuracy")
-
     model.train()
     eval_results = dict()
     for epoch in range(num_epochs):
@@ -38,6 +36,7 @@ def train_model(model, parameters, train_dataloader, eval_dataloader, use_cuda=T
             progress_bar.update(1)
 
             if i % eval_steps == 0:
+                metric = evaluate.load("accuracy")
                 model.eval()
                 for eval_batch in eval_dataloader:
                     eval_batch = {k: v.to(device) for k, v in eval_batch.items()}
