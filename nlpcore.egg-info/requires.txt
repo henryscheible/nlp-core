@@ -3,3 +3,4 @@ transformers[sentencepiece]
 datasets
 evaluate
 sklearn
+captum

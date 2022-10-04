@@ -11,6 +11,7 @@ from nlpcore.maskmodel import MaskModel
 
 def attribute_factory(model, eval_dataloader):
     def attribute(mask):
+        print(mask.size())
         mask = mask.flatten()
         model.set_mask(mask)
         metric = evaluate.load("accuracy")
@@ -28,7 +29,7 @@ def attribute_factory(model, eval_dataloader):
     return attribute
 
 
-def get_shapley(eval_dataloader, checkpoint):
+def get_shapley(eval_dataloader, checkpoint, num_samples=3000):
     transformers.logging.set_verbosity_error()
 
     mask = torch.ones((1, 144)).to("cuda")
@@ -40,7 +41,7 @@ def get_shapley(eval_dataloader, checkpoint):
         model.eval()
         sv = ShapleyValueSampling(attribute)
         attribution = sv.attribute(
-            torch.ones((1, 144)).to("cuda"), n_samples=1000, show_progress=True
+            torch.ones((1, 144)).to("cuda"), n_samples=num_samples, show_progress=True
         )
 
     print(attribution)

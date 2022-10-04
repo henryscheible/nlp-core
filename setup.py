@@ -13,7 +13,8 @@ setup(name="nlpcore",
           'transformers[sentencepiece]',
           'datasets',
           'evaluate',
-          'sklearn'
+          'sklearn',
+          'captum'
       ],
       packages=find_packages()
 )
