@@ -40,13 +40,13 @@ def train_model(model, parameters, train_dataloader, eval_dataloader, use_cuda=T
             if i % eval_steps == 0:
                 model.eval()
                 for eval_batch in eval_dataloader:
-                    eval_batch = {k: v.to(device) for k, v in batch.items()}
+                    eval_batch = {k: v.to(device) for k, v in eval_batch.items()}
                     with torch.no_grad():
-                        outputs = model(**batch)
+                        outputs = model(**eval_batch)
 
                     logits = outputs.logits
                     predictions = torch.argmax(logits, dim=-1)
-                    metric.add_batch(predictions=predictions, references=batch["labels"])
+                    metric.add_batch(predictions=predictions, references=eval_batch["labels"])
                 eval_results[f"{epoch}.{i}"] = metric.compute()
                 model.save_pretrained(f"out/{epoch}.{i}_checkpoint/")
     print("===EVAL RESULTS===")
