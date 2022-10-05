@@ -29,7 +29,7 @@ def attribute_factory(model, eval_dataloader):
     return attribute
 
 
-def get_shapley(eval_dataloader, checkpoint, num_samples=3000):
+def get_shapley(eval_dataloader, checkpoint, num_samples=3000, num_perturbations_per_eval=1):
     transformers.logging.set_verbosity_error()
 
     mask = torch.ones((1, 144)).to("cuda")
@@ -41,7 +41,8 @@ def get_shapley(eval_dataloader, checkpoint, num_samples=3000):
         model.eval()
         sv = ShapleyValueSampling(attribute)
         attribution = sv.attribute(
-            torch.ones((1, 144)).to("cuda"), n_samples=num_samples, show_progress=True
+            torch.ones((1, 144)).to("cuda"), n_samples=num_samples, show_progress=True,
+            perturbations_per_eval=num_perturbations_per_eval
         )
 
     print(attribution)
