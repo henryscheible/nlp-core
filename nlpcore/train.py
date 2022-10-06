@@ -8,9 +8,9 @@ from tqdm.auto import tqdm
 from transformers import AdamW, get_scheduler, DataCollatorWithPadding, AutoModel
 
 
-def train_model(model, parameters, train_dataloader, eval_dataloader, use_cuda=True):
+def train_model(model, parameters, train_dataloader, eval_dataloader, use_cuda=True, epochs=3):
     optimizer = AdamW(parameters, lr=5e-5)
-    num_epochs = 5
+    num_epochs = epochs
     num_training_steps = num_epochs * len(train_dataloader)
     lr_scheduler = get_scheduler(
         name="linear", optimizer=optimizer, num_warmup_steps=0, num_training_steps=num_training_steps
