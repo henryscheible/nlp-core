@@ -1,17 +1,41 @@
-from nlpcore.bert.bert import load_bert_model
-from nlpcore.bias_datasets.crows_pairs import load_crows_pairs, process_crows_pairs
-from nlpcore.bias_datasets.winobias import load_winobias, process_winobias
+import evaluate
 
-dataset = load_crows_pairs()
+from nlpcore.bert.bert import load_bert_model
+from nlpcore.bias_datasets.stereoset import load_stereoset, process_stereoset
+
+
+def get_positive_mask(contribs):
+    ret = []
+    for attribution in contribs:
+        if attribution > 0:
+            ret += [1]
+        else:
+            ret += [0]
+
+
+def get_negative_mask(contribs):
+    ret = []
+    for attribution in contribs:
+        if attribution <0:
+            ret += [1]
+        else:
+            ret += [0]
+
+
+dataset = load_stereoset()
 tokenizer, model = load_bert_model()
 
-train, eval = process_crows_pairs(dataset, tokenizer)
+train, eval = process_stereoset(dataset, tokenizer)
 
-tokenizer_b, model_b = load_bert_model()
-raw_dataset_b = load_winobias()
-train_b, eval_b = process_winobias(raw_dataset_b, tokenizer)
+metric = evaluate.load("accuracy")
+model.eval()
+for eval_batch in eval:
+    eval_batch = {k: v.to(device) for k, v in eval_batch.items()}
+    with torch.no_grad():
+        outputs = model(**eval_batch)
 
-for i, batch in enumerate(train_b):
-    batch = {k: v for k, v in batch.items()}
-
-print("exit")
+    logits = outputs.logits
+    predictions = torch.argmax(logits, dim=-1)
+    metric.add_batch(predictions=predictions, references=eval_batch["labels"])
+    eval_results[f"{epoch}.{i}"] = metric.compute()
+    model.save_pretrained(f"out/{epoch}.{i}_checkpoint/")

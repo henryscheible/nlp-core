@@ -16,7 +16,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 
 ENV PATH=$CONDA_DIR/bin:$PATH
 RUN conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
-RUN python -m pip install "transformers[sentencepiece]" sklearn datasets evaluate captum
+RUN python -m pip install "transformers[sentencepiece]" sklearn datasets evaluate captum dropbox
 COPY . /workspace
 ENV CUDA_VISIBLE_DEVICES=1
 CMD ["bash"]

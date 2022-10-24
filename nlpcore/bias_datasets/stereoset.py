@@ -27,6 +27,7 @@ def process_fn_binary(example):
         "context": contexts
     }
 
+
 def process_fn_all(example):
     sentences = []
     labels = []
@@ -42,9 +43,7 @@ def process_fn_all(example):
     }
 
 
-
 def process_stereoset(dataset, tokenizer, batch_size=64, include_unrelated=False):
-
     def tokenize(example):
         return tokenizer(example["context"], example["sentence"], truncation=True, padding=True)
 
@@ -56,12 +55,25 @@ def process_stereoset(dataset, tokenizer, batch_size=64, include_unrelated=False
     ])
     process_fn = process_fn_all if include_unrelated else process_fn_binary
     dataset_processed = dataset.map(process_fn, batched=True, batch_size=1, remove_columns=["sentences"])
-    tokenized_dataset = dataset_processed.map(tokenize, batched=True, batch_size=64, remove_columns=["context", "sentence"])
-    split_tokenized_dataset = tokenized_dataset.train_test_split(
-        test_size=0.2
-    )
-    data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
-    train_dataloader = DataLoader(split_tokenized_dataset["train"], shuffle=True, batch_size=batch_size, collate_fn=data_collator)
-    eval_dataloader = DataLoader(split_tokenized_dataset["test"], batch_size=batch_size, collate_fn=data_collator)
+    print(dataset_processed.column_names)
+    tokenized_dataset = dataset_processed.map(tokenize, batched=True, batch_size=64,
+                                              remove_columns=["context", "sentence"])
+    print(tokenized_dataset.column_names)
 
+    split_tokenized_dataset = tokenized_dataset.train_test_split(
+        test_size=0.3
+    )
+
+    return DatasetDict({
+        "train": split_tokenized_dataset["train"],
+        "eval": split_tokenized_dataset["test"]
+    })
+
+
+def load_processed_stereoset(tokenizer, include_unrelated=False):
+    tag = "stereoset_all" if include_unrelated else "stereoset_binary"
+    dataset = load_dataset(f"henryscheible/{tag}")
+    data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+    train_dataloader = DataLoader(dataset["train"], shuffle=True, batch_size=64, collate_fn=data_collator)
+    eval_dataloader = DataLoader(dataset["eval"], batch_size=64, collate_fn=data_collator)
     return train_dataloader, eval_dataloader

@@ -14,4 +14,5 @@ nlpcore/bert/__init__.py
 nlpcore/bert/bert.py
 nlpcore/bias_datasets/__init__.py
 nlpcore/bias_datasets/crows_pairs.py
+nlpcore/bias_datasets/stereoset.py
 nlpcore/bias_datasets/winobias.py

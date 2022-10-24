@@ -5,22 +5,22 @@ import torch
 from huggingface_hub import HfApi
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
-from transformers import AdamW, get_scheduler, DataCollatorWithPadding, AutoModel
+from transformers import AdamW, get_scheduler, AutoModelForSequenceClassification
 
 
-def train_model(model, parameters, train_dataloader, eval_dataloader, use_cuda=True, epochs=3):
+def train_model(model, parameters, train_dataloader, eval_dataloader, epochs=3):
     optimizer = AdamW(parameters, lr=5e-5)
     num_epochs = epochs
     num_training_steps = num_epochs * len(train_dataloader)
     lr_scheduler = get_scheduler(
         name="linear", optimizer=optimizer, num_warmup_steps=0, num_training_steps=num_training_steps
     )
-    device = torch.device("cuda") if use_cuda else torch.device("cpu")
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model.to(device)
 
     progress_bar = tqdm(range(num_training_steps))
 
-    eval_steps = 1
+    eval_steps = 10
 
     model.train()
     eval_results = dict()
@@ -36,7 +36,7 @@ def train_model(model, parameters, train_dataloader, eval_dataloader, use_cuda=T
             progress_bar.update(1)
 
             if i % eval_steps == 0:
-                metric = evaluate.load("accuracy")
+                metric = evaluate.load("accuracy", keep_in_memory=True)
                 model.eval()
                 for eval_batch in eval_dataloader:
                     eval_batch = {k: v.to(device) for k, v in eval_batch.items()}
@@ -48,6 +48,7 @@ def train_model(model, parameters, train_dataloader, eval_dataloader, use_cuda=T
                     metric.add_batch(predictions=predictions, references=eval_batch["labels"])
                 eval_results[f"{epoch}.{i}"] = metric.compute()
                 model.save_pretrained(f"out/{epoch}.{i}_checkpoint/")
+                print(f"Saved model {epoch}.{i} with accuracy {eval_results[f'{epoch}.{i}']}")
     print("===EVAL RESULTS===")
     print(eval_results)
     best_model_key = ""
@@ -63,6 +64,5 @@ def train_model(model, parameters, train_dataloader, eval_dataloader, use_cuda=T
     }
     with open("out/validation.json", "a") as file:
         file.write(json.dumps(validation))
-    best_model = AutoModel.from_pretrained(f"out/{best_model_key}_checkpoint/")
-    api = HfApi()
+    best_model = AutoModelForSequenceClassification.from_pretrained(f"out/{best_model_key}_checkpoint/")
     return best_model, validation

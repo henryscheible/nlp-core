@@ -20,7 +20,6 @@ def attribute_factory(model, eval_dataloader):
             eval_batch = {k: v.to("cuda") for k, v in eval_batch.items()}
             with torch.no_grad():
                 outputs = model(**eval_batch)
-
             logits = outputs.logits
             predictions = torch.argmax(logits, dim=-1)
             metric.add_batch(predictions=predictions, references=eval_batch["labels"])
@@ -47,7 +46,7 @@ def get_shapley(eval_dataloader, checkpoint, num_samples=3000, num_perturbations
 
     print(attribution)
 
-    with open("contribs.txt", "a") as file:
+    with open("contribs.txt", "w") as file:
         file.write(json.dumps(attribution.flatten().tolist()))
 
     return attribution
