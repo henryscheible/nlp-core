@@ -49,12 +49,20 @@ def process_winobias_split(dataset, tokenizer):
     detokenized_dataset = dataset.map(remove_tokenization, batched=False)
     tokenized_dataset = detokenized_dataset.map(tokenize_function, batched=True, batch_size=32)
     tokenized_dataset = tokenized_dataset.remove_columns(['document_id', 'part_number', 'word_number', 'tokens', 'pos_tags', 'parse_bit', 'predicate_lemma', 'predicate_framenet_id', 'word_sense', 'speaker', 'ner_tags', 'verbal_predicates', 'coreference_clusters', 'sentence'])
-    data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
-    dataloader = DataLoader(tokenized_dataset, shuffle=True, batch_size=128, collate_fn=data_collator)
-    return dataloader
+    return tokenized_dataset
 
 
 def process_winobias(dataset, tokenizer):
-    train_dataloader = process_winobias_split(dataset["train"], tokenizer)
-    eval_dataloader = process_winobias_split(dataset["eval"], tokenizer)
+    data = load_winobias()
+    return DatasetDict({
+        "train": process_winobias_split(data["train"], tokenizer),
+        "eval": process_winobias_split(data["eval"], tokenizer)
+    })
+
+
+def load_processed_winobias(tokenizer):
+    dataset = load_dataset(f"henryscheible/winobias")
+    data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+    train_dataloader = DataLoader(dataset["train"], shuffle=True, batch_size=8, collate_fn=data_collator)
+    eval_dataloader = DataLoader(dataset["eval"], batch_size=8, collate_fn=data_collator)
     return train_dataloader, eval_dataloader

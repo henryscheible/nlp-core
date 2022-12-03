@@ -20,7 +20,7 @@ def train_model(model, parameters, train_dataloader, eval_dataloader, epochs=3):
 
     progress_bar = tqdm(range(num_training_steps))
 
-    eval_steps = 10
+    eval_steps = 5
 
     model.train()
     eval_results = dict()

@@ -47,10 +47,14 @@ def process_crows_pairs(dataset, tokenizer, batch_size=64):
     split_tokenized_dataset = tokenized_dataset.train_test_split(
         test_size=0.2
     )
-    data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
-    train_dataloader = DataLoader(split_tokenized_dataset["train"], shuffle=True, batch_size=batch_size, collate_fn=data_collator)
-    eval_dataloader = DataLoader(split_tokenized_dataset["test"], batch_size=batch_size, collate_fn=data_collator)
+    return split_tokenized_dataset
 
+
+def load_processed_crows_pairs(tokenizer):
+    dataset = load_dataset(f"henryscheible/crows_pairs")
+    data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+    train_dataloader = DataLoader(dataset["train"], shuffle=True, batch_size=8, collate_fn=data_collator)
+    eval_dataloader = DataLoader(dataset["test"], batch_size=8, collate_fn=data_collator)
     return train_dataloader, eval_dataloader
 
 
