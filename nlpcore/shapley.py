@@ -42,7 +42,7 @@ def output_factory(model, eval_dataloader):
                 outputs = model(**eval_batch)
             logits = outputs.logits
             probs = torch.nn.functional.softmax(logits, dim=-1)
-            total_probs += probs.sum()/float(probs.shape()[0])
+            total_probs += probs.sum()/float(probs.shape[0])
             batch_count += 1
         return total_probs / float(batch_count)
     return attribute
