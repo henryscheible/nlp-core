@@ -11,7 +11,6 @@ from nlpcore.maskmodel import MaskModel
 
 def attribute_factory(model, eval_dataloader):
     def attribute(mask):
-        print(mask.size())
         mask = mask.flatten()
         model.set_mask(mask)
         metric = evaluate.load("accuracy")
@@ -30,7 +29,6 @@ def attribute_factory(model, eval_dataloader):
 
 def output_factory(model, eval_dataloader):
     def attribute(mask):
-        print(mask.size())
         mask = mask.flatten()
         model.set_mask(mask)
         model.eval()
@@ -42,8 +40,9 @@ def output_factory(model, eval_dataloader):
                 outputs = model(**eval_batch)
             logits = outputs.logits
             probs = torch.nn.functional.softmax(logits, dim=-1)
-            total_probs += probs.sum()/float(probs.shape[0])
+            total_probs += probs[:,1].mean()
             batch_count += 1
+        print(total_probs / float(batch_count))
         return total_probs / float(batch_count)
     return attribute
 
