@@ -8,11 +8,14 @@ from transformers import DataCollatorWithPadding
 
 
 class StereotypeScoreCalculator:
-    def __init__(self, model, tokenizer):
-        self.model = model.to("cuda:1")
-        self.tokenizer = tokenizer
+    def __init__(self, intersentence_model, intersentence_tokenizer, intrasentence_model, intrasentence_tokenizer):
+        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        self.intersentence_model = intersentence_model.to(self.device)
+        self.intrasentence_model = intrasentence_model.to(self.device)
+        self.intersentence_tokenizer = intersentence_tokenizer
+        self.intrasentence_tokenizer = intrasentence_tokenizer
 
-    def _get_stereoset(self):
+    def _get_stereoset_intersentence(self):
         intersentence_raw = load_dataset("stereoset", "intersentence")["validation"]
 
         def process_fn_split(example, desired_label):
@@ -25,7 +28,7 @@ class StereotypeScoreCalculator:
                     }
 
         def tokenize_fn(example):
-            return self.tokenizer(example["context"], example["sentence"], padding=True, truncation=True, return_tensors="pt")
+            return self.intersentence_tokenizer(example["context"], example["sentence"], padding=True, truncation=True, return_tensors="pt")
 
         negative_split_raw = intersentence_raw.map(lambda example: process_fn_split(example, 0), batched=False)
         positive_split_raw = intersentence_raw.map(lambda example: process_fn_split(example, 1), batched=False)
@@ -37,24 +40,110 @@ class StereotypeScoreCalculator:
 
         return negative_split, positive_split, unrelated_split
 
-    def __call__(self):
-        splits = self._get_stereoset()
-        data_collator = DataCollatorWithPadding(tokenizer=self.tokenizer)
+    def _get_stereoset_intrasentence(self):
+        intrasentence_raw = load_dataset("stereoset", "intrasentence")["validation"]
+
+        def process_fn_split(example, desired_label):
+            for i in range(3):
+                if example["sentences"]["gold_label"][i] == desired_label:
+                    context = example["context"].replace("BLANK", "[MASK]")
+                    word_idx = None
+                    context_words = len(example['context'].split(" "))
+                    sentence = example["sentences"]["sentence"][i]
+                    sentence_words = len(sentence.split(" "))
+                    for idx, word in enumerate(example['context'].split(" ")):
+                        if "[MASK]" in word:
+                            word_idx = idx
+                    template_word = " ".join(sentence.split(" ")[word_idx:(word_idx + 1 + sentence_words - context_words)])
+                    return {
+                        "masked_word": template_word,
+                        "label": example["sentences"]["gold_label"][i],
+                        "context": context
+                    }
+
+        def tokenize_fn(example):
+            return self.intrasentence_tokenizer(example["context"], padding=True, truncation=True, return_tensors="pt")
+
+        negative_split_raw = intrasentence_raw.map(lambda example: process_fn_split(example, 0), batched=False)
+        positive_split_raw = intrasentence_raw.map(lambda example: process_fn_split(example, 1), batched=False)
+        unrelated_split_raw = intrasentence_raw.map(lambda example: process_fn_split(example, 2), batched=False)
+
+        negative_split = negative_split_raw.map(tokenize_fn, batched=True, batch_size=100)
+        positive_split = positive_split_raw.map(tokenize_fn, batched=True, batch_size=100)
+        unrelated_split = unrelated_split_raw.map(tokenize_fn, batched=True, batch_size=100)
+
+        return negative_split, positive_split, unrelated_split
+
+    def _get_ss_intersentence(self):
+        splits = self._get_stereoset_intersentence()
+        data_collator = DataCollatorWithPadding(tokenizer=self.intersentence_tokenizer)
         def process_split(split):
             split = split.remove_columns(["id", "target", "bias_type", "context", "sentences", "sentence", "label"])
             dataloader = DataLoader(
                 split, shuffle=False, batch_size=100, collate_fn=data_collator
             )
             logits = list()
-            self.model.eval()
+            self.intersentence_model.eval()
             for batch in dataloader:
-                batch = {k: v.to("cuda:1") for k, v in batch.items()}
+                batch = {k: v.to(self.device) for k, v in batch.items()}
                 with torch.no_grad():
-                    outputs = self.model(**batch)
+                    outputs = self.intersentence_model(**batch)
                 logits += [outputs.logits[:, 0]]
             return torch.cat(logits)
 
 
         processed_splits = list(map(process_split, list(splits)))
         result = torch.stack(processed_splits, 1)
-        print(result)
+        preds = torch.argmax(result, dim=1).tolist()
+        targets = splits[0]["target"]
+        totals = defaultdict(float)
+        positives = defaultdict(float)
+        for target, pred in zip(targets, preds):
+            if pred == 1:
+                positives[target] += 1.0
+            totals[target] += 1.0
+        ss_scores = []
+        for term in totals.keys():
+            ss_score = 100.0 * (positives[term] / totals[term])
+            ss_scores += [ss_score]
+        ss_score = np.mean(ss_scores)
+        return ss_score
+
+    def _get_ss_intrasentence(self):
+        splits = self._get_stereoset_intrasentence()
+        data_collator = DataCollatorWithPadding(tokenizer=self.intrasentence_tokenizer)
+        def process_split(split):
+            split = split.remove_columns(["id", "target", "bias_type", "context", "sentences", "label", "masked_word"])
+            dataloader = DataLoader(
+                split, shuffle=False, batch_size=100, collate_fn=data_collator
+            )
+            logits = list()
+            self.intrasentence_model.eval()
+            for batch in dataloader:
+                batch = {k: v.to(self.device) for k, v in batch.items()}
+                with torch.no_grad():
+                    outputs = self.intrasentence_model(**batch)
+                logits += [outputs.logits[:, 0]]
+            return torch.cat(logits)
+
+
+        processed_splits = list(map(process_split, list(splits)))
+        result = torch.stack(processed_splits, 1)
+        preds = torch.argmax(result, dim=1).tolist()
+        targets = splits[0]["target"]
+        totals = defaultdict(float)
+        positives = defaultdict(float)
+        for target, pred in zip(targets, preds):
+            if pred == 1:
+                positives[target] += 1.0
+            totals[target] += 1.0
+        ss_scores = []
+        for term in totals.keys():
+            ss_score = 100.0 * (positives[term] / totals[term])
+            ss_scores += [ss_score]
+        ss_score = np.mean(ss_scores)
+        return ss_score
+
+    def __call__(self):
+        return self._get_ss_intersentence()
+
