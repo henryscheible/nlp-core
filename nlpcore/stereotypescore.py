@@ -14,6 +14,7 @@ class StereotypeScoreCalculator:
         self.intrasentence_model = intrasentence_model.to(self.device)
         self.intersentence_tokenizer = intersentence_tokenizer
         self.intrasentence_tokenizer = intrasentence_tokenizer
+        self.intersentence_splits = self._get_ss_intersentence()
 
     def _get_stereoset_intersentence(self):
         intersentence_raw = load_dataset("stereoset", "intersentence")["validation"]
@@ -121,7 +122,7 @@ class StereotypeScoreCalculator:
         return ss_score, lm_score
 
     def _get_ss_intrasentence(self):
-        splits = self._get_stereoset_intrasentence()
+        splits = self.intersentence_splits
         data_collator = DataCollatorWithPadding(tokenizer=self.intrasentence_tokenizer)
         def process_split(split):
             split = split.remove_columns(["id", "target", "bias_type", "context", "sentences", "label", "masked_word"])
