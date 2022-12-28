@@ -79,7 +79,7 @@ class StereotypeScoreCalculator:
         return negative_split, positive_split, unrelated_split
 
     def _get_ss_intersentence(self):
-        splits = self._get_stereoset_intersentence()
+        splits = self.intersentence_splits
         data_collator = DataCollatorWithPadding(tokenizer=self.intersentence_tokenizer)
         def process_split(split):
             split = split.remove_columns(["id", "target", "bias_type", "context", "sentences", "sentence", "label"])
@@ -125,7 +125,7 @@ class StereotypeScoreCalculator:
         return ss_score, lm_score
 
     def _get_ss_intrasentence(self):
-        splits = self.intersentence_splits
+        splits = self._get_stereoset_intrasentence()
         data_collator = DataCollatorWithPadding(tokenizer=self.intrasentence_tokenizer)
         def process_split(split):
             split = split.remove_columns(["id", "target", "bias_type", "context", "sentences", "label", "masked_word"])
