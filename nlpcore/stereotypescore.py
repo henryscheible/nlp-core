@@ -14,7 +14,7 @@ class StereotypeScoreCalculator:
         self.intrasentence_model = intrasentence_model.to(self.device)
         self.intersentence_tokenizer = intersentence_tokenizer
         self.intrasentence_tokenizer = intrasentence_tokenizer
-        self.intersentence_splits = self._get_ss_intersentence()
+        self.intersentence_splits = self._get_stereoset_intersentence()
 
     def set_intersentence_model(self, model):
         self.intersentence_model = model.to(self.device)
@@ -121,7 +121,7 @@ class StereotypeScoreCalculator:
             lm_score = (related[term] / (totals[term] * 2.0)) * 100.0
             lm_scores += [lm_score]
         ss_score = np.mean(ss_scores)
-        lm_scores = np.mean(lm_scores)
+        lm_score = np.mean(lm_scores)
         return ss_score, lm_score
 
     def _get_ss_intrasentence(self):
