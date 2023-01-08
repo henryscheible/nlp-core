@@ -52,7 +52,7 @@ def process_winobias_split(dataset, tokenizer):
     return tokenized_dataset
 
 
-def process_winobias(dataset, tokenizer):
+def process_winobias(tokenizer):
     data = load_winobias()
     return DatasetDict({
         "train": process_winobias_split(data["train"], tokenizer),

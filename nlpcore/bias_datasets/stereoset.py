@@ -17,15 +17,17 @@ def process_fn_binary(example):
     labels = []
     contexts = []
     for i in range(3):
-        if example["sentences"]["gold_label"][i] != 2:
-            sentences.append(example["sentences"]["sentence"][i])
-            labels.append(example["sentences"]["gold_label"][i])
-            contexts.append(example["context"])
+        print(f"example: {example}")
+        if example["sentences"][0]["gold_label"][i] != 2:
+            sentences.append(example["sentences"][0]["sentence"][i])
+            labels.append(example["sentences"][0]["gold_label"][i])
+            contexts.append(example["context"][0])
     return {
         "sentence": sentences,
         "label": labels,
         "context": contexts
     }
+
 
 
 def process_fn_all(example):
