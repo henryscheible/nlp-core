@@ -48,7 +48,7 @@ def train_model(model, parameters, train_dataloader, eval_dataloader, epochs=3):
                     metric.add_batch(predictions=predictions, references=eval_batch["labels"])
                 eval_results[f"{epoch}.{i}"] = metric.compute()
                 model.save_pretrained(f"out/{epoch}.{i}_checkpoint/")
-                print(f"Saved model {epoch}.{i} with accuracy {eval_results[f'{epoch}.{i}']}")
+                # print(f"Saved model {epoch}.{i} with accuracy {eval_results[f'{epoch}.{i}']}")
     print("===EVAL RESULTS===")
     print(eval_results)
     best_model_key = ""
