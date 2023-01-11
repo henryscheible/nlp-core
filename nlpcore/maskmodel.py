@@ -5,6 +5,8 @@ from torch import nn
 
 
 # Copied with some modifications from https://gist.github.com/Helw150/9e9f5320fd49646ac893eec34f41bf0d
+from transformers import BertForSequenceClassification
+
 
 def construct_array():
     return []
@@ -17,12 +19,13 @@ class MaskModel(nn.Module):
         self.counter = 0
         self.prev = 1.0
         self.real_model = real_model
-        self.head_mask = head_mask
+        self.head_mask = head_mask.reshape(12, 12)
         self.true_prev = True
         self.sample_limit = 1000
         self.prev_mask = torch.ones_like(head_mask).to("cuda").flatten()
         self.u = torch.zeros_like(head_mask).to("cuda").flatten()
         self.tracker = open("out.txt", "a")
+        self.config = real_model.config
 
     def set_mask(self, mask):
         mask = mask.reshape(12, 12)
@@ -54,3 +57,5 @@ class MaskModel(nn.Module):
             return_dict=return_dict,
             head_mask=self.head_mask,
         )
+
+    def config(self):
