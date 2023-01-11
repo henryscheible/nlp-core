@@ -57,5 +57,3 @@ class MaskModel(nn.Module):
             return_dict=return_dict,
             head_mask=self.head_mask,
         )
-
-    def config(self):
