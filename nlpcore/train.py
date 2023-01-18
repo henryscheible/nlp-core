@@ -9,7 +9,7 @@ from transformers import AdamW, get_scheduler, AutoModelForSequenceClassificatio
 
 
 def train_model(model, parameters, train_dataloader, eval_dataloader, epochs=3):
-    optimizer = AdamW(parameters, lr=5e-5)
+    optimizer = AdamW(parameters, lr=5e-4)
     num_epochs = epochs
     num_training_steps = num_epochs * len(train_dataloader)
     lr_scheduler = get_scheduler(
@@ -20,7 +20,7 @@ def train_model(model, parameters, train_dataloader, eval_dataloader, epochs=3):
 
     progress_bar = tqdm(range(num_training_steps))
 
-    eval_steps = 5
+    eval_steps = 10
 
     model.train()
     eval_results = dict()

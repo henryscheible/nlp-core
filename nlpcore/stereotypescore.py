@@ -60,7 +60,7 @@ class StereotypeScoreCalculator:
                     tokens = tokenizer.tokenize(template_word)
                     token_ids = tokenizer.convert_tokens_to_ids(tokens)
                     num_tokens_in_mask = len(tokens)
-                    context = context.replace("BLANK", "".join(["[MASK]"] * num_tokens_in_mask))
+                    context = context.replace("BLANK", "".join([tokenizer.mask_token] * num_tokens_in_mask))
                     inputs = tokenizer(context, return_tensors="pt")
                     mask_token_indices = (inputs.input_ids == tokenizer.mask_token_id)[0].nonzero()[:,0]
                     return {
@@ -85,6 +85,8 @@ class StereotypeScoreCalculator:
         return negative_split, positive_split, unrelated_split
 
     def _get_ss_intersentence(self):
+        print("running intersentence calculations")
+
         splits = self.intersentence_splits
         data_collator = DataCollatorWithPadding(tokenizer=self.intersentence_tokenizer)
         def process_split(split):
@@ -128,9 +130,10 @@ class StereotypeScoreCalculator:
             lm_scores += [lm_score]
         ss_score = np.mean(ss_scores)
         lm_score = np.mean(lm_scores)
-        return ss_score, lm_score
+        return lm_score, ss_score
 
     def _get_ss_intrasentence(self):
+        print("running intrasentence calculations")
         splits = self.intrasentence_splits
         data_collator = DataCollatorWithPadding(tokenizer=self.intrasentence_tokenizer)
         def process_split(split):
@@ -154,14 +157,19 @@ class StereotypeScoreCalculator:
             )
             all_avg_log_probs = list()
             self.intrasentence_model.eval()
+            start = 0
             for batch in dataloader:
                 batch = {k: v.to(self.device) for k, v in batch.items()}
                 with torch.no_grad():
                     outputs = self.intrasentence_model(**batch)
                 avg_log_probs = torch.zeros(outputs.logits.shape[0])
-                for idx, (indices, ids) in enumerate(list(zip(mask_token_indices, masked_token_ids))[:outputs.logits.shape[0]]):
-                    log_probs = [outputs.logits[idx, index, token_id] for index, token_id in zip(indices, ids)]
-                    avg_log_probs[idx] = sum(log_probs) / len(log_probs)
+                for idx, (indices, ids) in enumerate(list(zip(mask_token_indices, masked_token_ids))[start:start+outputs.logits.shape[0]]):
+                    log_odds = np.array([outputs.logits[idx, index, token_id] for index, token_id in zip(indices, ids)])
+                    odds = np.exp(log_odds)
+                    probs = odds / (1 + odds)
+                    log_probs = np.log(probs)
+                    avg_log_probs[idx] = float(np.mean(log_probs))
+                start += outputs.logits.shape[0]
                 all_avg_log_probs += [avg_log_probs]
 
             return torch.cat(all_avg_log_probs)
@@ -193,11 +201,11 @@ class StereotypeScoreCalculator:
             lm_scores += [lm_score]
         ss_score = np.mean(ss_scores)
         lm_score = np.mean(lm_scores)
-        return ss_score, lm_score
+        return lm_score, ss_score
 
     def __call__(self):
         return {
-            "intersentence": self._get_ss_intersentence(),
+            # "intersentence": self._get_ss_intersentence(),
             "intrasentence": self._get_ss_intrasentence()
         }
 
