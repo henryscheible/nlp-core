@@ -21,6 +21,10 @@ class StereotypeScoreCalculator:
     def set_intersentence_model(self, model):
         self.intersentence_model = model.to(self.device)
 
+
+    def set_intrasentence_model(self, model):
+        self.intrasentence_model = model.to(self.device)
+
     def _get_stereoset_intersentence(self):
         intersentence_raw = load_dataset("stereoset", "intersentence")["validation"]
 
@@ -164,7 +168,7 @@ class StereotypeScoreCalculator:
                     outputs = self.intrasentence_model(**batch)
                 avg_log_probs = torch.zeros(outputs.logits.shape[0])
                 for idx, (indices, ids) in enumerate(list(zip(mask_token_indices, masked_token_ids))[start:start+outputs.logits.shape[0]]):
-                    log_odds = np.array([outputs.logits[idx, index, token_id] for index, token_id in zip(indices, ids)])
+                    log_odds = np.array([outputs.logits[idx, index, token_id].to("cpu") for index, token_id in zip(indices, ids)])
                     odds = np.exp(log_odds)
                     probs = odds / (1 + odds)
                     log_probs = np.log(probs)
